@@ -89,9 +89,10 @@ try:
         if component_value is None:
             return sdc.CanvasResult(None, None)
 
+        raw_val = component_value.get("raw") if isinstance(component_value, dict) else None
         return sdc.CanvasResult(
-            np.asarray(sdc._data_url_to_image(component_value["data"])),
-            component_value["raw"],
+            None,
+            raw_val,
         )
 
     # Patch both sdc.st_canvas and export it directly

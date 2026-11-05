@@ -202,7 +202,6 @@ class GoogleSheetsStore:
                 self.annotation_sheet.clear()
                 self.annotation_sheet.update(range_name="A1", values=values)
                 _fetch_annotation_records.clear()
-                st.cache_data.clear()
                 return True
             except Exception as exc:
                 st.error(f"Lỗi khi đồng bộ gán nhãn lên Google Sheets: {exc}")
@@ -229,7 +228,6 @@ class GoogleSheetsStore:
                 self.annotation_sheet.clear()
                 self.annotation_sheet.update(range_name="A1", values=values)
                 _fetch_annotation_records.clear()
-                st.cache_data.clear()
                 return True
             except Exception as exc:
                 st.error(f"Lỗi khi xóa gán nhãn trên Google Sheets: {exc}")

@@ -450,9 +450,10 @@ def render(
 
     selected_id = _render_navigation(case_ids)
 
-    # Keep URL query parameter synchronized with the currently inspected case
-    if st.query_params.get("case") != selected_id:
-        st.query_params["case"] = selected_id
+    # Keep URL query parameter synchronized with the currently inspected case ONLY if in Case Viewer tab
+    if st.session_state.get("active_main_tab") == "Chi tiết ca bệnh":
+        if st.query_params.get("case") != selected_id:
+            st.query_params["case"] = selected_id
 
     if st.session_state.get("previous_case_id") != selected_id:
         st.session_state["previous_case_id"] = selected_id

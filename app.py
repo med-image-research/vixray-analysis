@@ -31,6 +31,25 @@ def main() -> None:
     selection = render_sidebar(data, store)
     filtered = apply_filters(data, selection)
 
+    TAB_NAMES = [
+        "Tổng quan",
+        "Danh sách gán nhãn",
+        "Chi tiết ca bệnh",
+    ]
+    TAB_SLUG_MAP = {
+        "Tổng quan": "overview",
+        "Danh sách gán nhãn": "findings",
+        "Chi tiết ca bệnh": "case-viewer",
+    }
+    SLUG_TAB_MAP = {
+        "overview": "Tổng quan",
+        "findings": "Danh sách gán nhãn",
+        "reference-findings": "Danh sách gán nhãn",
+        "case-viewer": "Chi tiết ca bệnh",
+        "cases": "Chi tiết ca bệnh",
+    }
+
+    query_tab = str(st.query_params.get("tab", "")).strip().lower()
     query_case = str(st.query_params.get("case", "") or st.query_params.get("image_id", "")).strip()
 
     if "pending_tab_switch" in st.session_state:
@@ -41,27 +60,40 @@ def main() -> None:
     elif "active_main_tab" not in st.session_state:
         if query_case:
             st.session_state["active_main_tab"] = "Chi tiết ca bệnh"
+        elif query_tab in SLUG_TAB_MAP:
+            st.session_state["active_main_tab"] = SLUG_TAB_MAP[query_tab]
         else:
             st.session_state["active_main_tab"] = "Tổng quan"
 
+    target_tab = st.session_state.get("active_main_tab", "Tổng quan")
+    if target_tab not in TAB_NAMES:
+        target_tab = "Tổng quan"
+        st.session_state["active_main_tab"] = target_tab
+
     try:
         tabs = st.tabs(
-            [
-                "Tổng quan",
-                "Danh sách gán nhãn",
-                "Chi tiết ca bệnh",
-            ],
+            TAB_NAMES,
             key="active_main_tab",
             on_change="rerun",
+            default=target_tab,
         )
     except TypeError:
-        tabs = st.tabs(
-            [
-                "Tổng quan",
-                "Danh sách gán nhãn",
-                "Chi tiết ca bệnh",
-            ]
-        )
+        try:
+            tabs = st.tabs(
+                TAB_NAMES,
+                key="active_main_tab",
+                on_change="rerun",
+            )
+        except TypeError:
+            tabs = st.tabs(TAB_NAMES)
+
+    current_tab = st.session_state.get("active_main_tab", "Tổng quan")
+    desired_slug = TAB_SLUG_MAP.get(current_tab, "overview")
+    if st.query_params.get("tab") != desired_slug:
+        st.query_params["tab"] = desired_slug
+
+    if current_tab != "Chi tiết ca bệnh" and "case" in st.query_params:
+        del st.query_params["case"]
 
     with tabs[0]:
         overview.render(filtered)

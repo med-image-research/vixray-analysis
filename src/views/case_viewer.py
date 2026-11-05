@@ -138,8 +138,6 @@ def _render_kpi_summary(case_row: pd.Series, case_findings: pd.DataFrame) -> Non
             except Exception:
                 pass
     m6.metric("Số bounding box", total_boxes)
-    selected_id = str(case_row.get("image_id", ""))
-    st.caption(f"🔗 **URL chia sẻ ca bệnh:** `?tab=case-viewer&case={selected_id}`")
     st.markdown("---")
 
 
@@ -192,39 +190,18 @@ def _render_canvas_view(
         st.error("Chưa tải được component Canvas.")
         return []
 
-    c_tool1, c_tool2 = st.columns([1.3, 1])
-    with c_tool1:
-        canvas_tool = st.radio(
-            "Công cụ:",
-            ["Vẽ bounding box", "Chọn / Di chuyển / Sửa"],
-            horizontal=True,
-            index=0,
-            key="canvas_tool_mode",
-        )
-    with c_tool2:
-        selected_color = st.radio(
-            "Màu viền:",
-            list(COLOR_MAP.keys()),
-            horizontal=True,
-            index=0,
-            key="canvas_color_radio",
-        )
+    st.caption("Dùng chuột kéo trên ảnh để vẽ bounding box. Sử dụng biểu tượng thùng rác bên dưới ảnh để xóa.")
 
-    drawing_mode = "rect" if canvas_tool == "Vẽ bounding box" else "transform"
+    selected_color = st.radio(
+        "Màu viền:",
+        list(COLOR_MAP.keys()),
+        horizontal=True,
+        index=0,
+        key="canvas_color_radio",
+    )
     stroke_color, fill_color = COLOR_MAP[selected_color]
     stroke_width = 1
-
-    c_tip, c_del = st.columns([2.5, 1.2])
-    with c_tip:
-        st.caption("Kéo chuột để vẽ. Chọn 'Chọn / Di chuyển' để click vào khung và bấm phím Delete/Backspace trên bàn phím.")
-    with c_del:
-        if st.button("🗑️ Xóa hết khung", use_container_width=True, key="clear_canvas_boxes_btn"):
-            st.session_state["edit_initial_boxes"] = "[]"
-            st.session_state["form_boxes"] = "[]"
-            st.session_state["last_seen_boxes"] = []
-            st.session_state["form_status"] = "Pending"
-            st.session_state["canvas_reset_idx"] = st.session_state.get("canvas_reset_idx", 0) + 1
-            st.rerun()
+    drawing_mode = "rect"
 
     canvas_width = 580
     scale = canvas_width / orig_w
@@ -232,18 +209,19 @@ def _render_canvas_view(
 
     initial_drawing = None
     if is_editing:
-        raw_b = st.session_state.get("edit_initial_boxes", st.session_state.get("form_boxes", "[]"))
-        try:
-            parsed_b = parse_boxes(raw_b)
-            initial_drawing = _make_initial_drawing(
-                parsed_b, scale, stroke_color, stroke_width, fill_color
-            )
-        except Exception:
-            pass
+        raw_b = st.session_state.get("edit_initial_boxes", "")
+        if raw_b:
+            try:
+                parsed_b = parse_boxes(raw_b)
+                if parsed_b:
+                    initial_drawing = _make_initial_drawing(
+                        parsed_b, scale, stroke_color, stroke_width, fill_color
+                    )
+            except Exception:
+                pass
 
-    canvas_reset_idx = st.session_state.get("canvas_reset_idx", 0)
     bg_img = get_cached_canvas_bg(selected_id, img, canvas_width, canvas_height)
-    canvas_key = f"canvas_{selected_id}_{st.session_state.get('editing_rf_id', 'new')}_{canvas_width}_{canvas_reset_idx}"
+    canvas_key = f"canvas_{selected_id}_{st.session_state.get('editing_rf_id', 'new')}_{canvas_width}"
     canvas_result = st_canvas(
         fill_color=fill_color,
         stroke_width=stroke_width,
@@ -268,6 +246,7 @@ def _render_canvas_view(
         st.session_state["last_seen_boxes"] = drawn_boxes
         st.session_state["form_boxes"] = str(drawn_boxes)
         st.session_state["edit_initial_boxes"] = str(drawn_boxes)
+        st.session_state["form_boxes_key_idx"] = st.session_state.get("form_boxes_key_idx", 0) + 1
         st.session_state["form_status"] = "Annotated" if drawn_boxes else "Pending"
 
     if drawn_boxes:
@@ -382,9 +361,11 @@ def _render_annotation_form(
     )
     st.session_state["form_status"] = form_status
 
+    form_boxes_key = f"form_boxes_input_{st.session_state.get('form_boxes_key_idx', 0)}"
     form_boxes_str = st.text_area(
         "Tọa độ khung định vị",
         value=st.session_state.get("form_boxes", "[]"),
+        key=form_boxes_key,
         help="Tọa độ pixel trên ảnh gốc [x, y, w, h]. Tự động điền khi vẽ bằng chuột hoặc xóa khi xóa khung trên ảnh.",
     )
 

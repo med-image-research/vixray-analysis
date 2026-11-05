@@ -1,0 +1,30 @@
+# Streamlit Secrets (DO NOT COMMIT SENSITIVE SERVICE ACCOUNT KEYS)
+.streamlit/secrets.toml
+
+# Python virtual environment
+.venv/
+venv/
+ENV/
+env/
+
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Large local files & raw shards
+ViX-Ray/
+images/
+storage/vixray_master_5400.csv
+*.parquet
+!storage/master.parquet
+*.zip
+*.tar.gz
+
+# IDE & Editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

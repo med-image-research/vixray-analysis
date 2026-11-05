@@ -192,17 +192,39 @@ def _render_canvas_view(
         st.error("Chưa tải được component Canvas.")
         return []
 
-    st.caption("Dùng chuột kéo trên ảnh để vẽ bounding box. Sử dụng thanh công cụ bên trên ảnh để hoàn tác hoặc xóa.")
+    c_tool1, c_tool2 = st.columns([1.3, 1])
+    with c_tool1:
+        canvas_tool = st.radio(
+            "Công cụ:",
+            ["Vẽ bounding box", "Chọn / Di chuyển / Sửa"],
+            horizontal=True,
+            index=0,
+            key="canvas_tool_mode",
+        )
+    with c_tool2:
+        selected_color = st.radio(
+            "Màu viền:",
+            list(COLOR_MAP.keys()),
+            horizontal=True,
+            index=0,
+            key="canvas_color_radio",
+        )
 
-    selected_color = st.radio(
-        "Màu viền:",
-        list(COLOR_MAP.keys()),
-        horizontal=True,
-        index=0,
-        key="canvas_color_radio",
-    )
+    drawing_mode = "rect" if canvas_tool == "Vẽ bounding box" else "transform"
     stroke_color, fill_color = COLOR_MAP[selected_color]
     stroke_width = 1
+
+    c_tip, c_del = st.columns([2.5, 1.2])
+    with c_tip:
+        st.caption("Kéo chuột để vẽ. Chọn 'Chọn / Di chuyển' để click vào khung và bấm phím Delete/Backspace trên bàn phím.")
+    with c_del:
+        if st.button("🗑️ Xóa hết khung", use_container_width=True, key="clear_canvas_boxes_btn"):
+            st.session_state["edit_initial_boxes"] = "[]"
+            st.session_state["form_boxes"] = "[]"
+            st.session_state["last_seen_boxes"] = []
+            st.session_state["form_status"] = "Pending"
+            st.session_state["canvas_reset_idx"] = st.session_state.get("canvas_reset_idx", 0) + 1
+            st.rerun()
 
     canvas_width = 580
     scale = canvas_width / orig_w
@@ -219,8 +241,9 @@ def _render_canvas_view(
         except Exception:
             pass
 
+    canvas_reset_idx = st.session_state.get("canvas_reset_idx", 0)
     bg_img = get_cached_canvas_bg(selected_id, img, canvas_width, canvas_height)
-    canvas_key = f"canvas_{selected_id}_{st.session_state.get('editing_rf_id', 'new')}_{canvas_width}"
+    canvas_key = f"canvas_{selected_id}_{st.session_state.get('editing_rf_id', 'new')}_{canvas_width}_{canvas_reset_idx}"
     canvas_result = st_canvas(
         fill_color=fill_color,
         stroke_width=stroke_width,
@@ -228,7 +251,7 @@ def _render_canvas_view(
         background_image=bg_img,
         height=canvas_height,
         width=canvas_width,
-        drawing_mode="rect",
+        drawing_mode=drawing_mode,
         initial_drawing=initial_drawing,
         display_toolbar=True,
         key=canvas_key,
@@ -244,6 +267,7 @@ def _render_canvas_view(
     if canvas_result and canvas_result.json_data is not None and last_seen_boxes != drawn_boxes:
         st.session_state["last_seen_boxes"] = drawn_boxes
         st.session_state["form_boxes"] = str(drawn_boxes)
+        st.session_state["edit_initial_boxes"] = str(drawn_boxes)
         st.session_state["form_status"] = "Annotated" if drawn_boxes else "Pending"
 
     if drawn_boxes:

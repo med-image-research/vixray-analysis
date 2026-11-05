@@ -48,10 +48,10 @@ def fetch_image_from_drive(file_id: str) -> Image.Image | None:
     if not file_id:
         return None
 
-    # 1. Fast Google Global Edge CDN (lh3.googleusercontent.com) - ~0.7s, zero auth overhead
+    # 1. Fast Google Global Edge CDN (lh3.googleusercontent.com)
     for cdn_url in (
-        f"https://lh3.googleusercontent.com/d/{file_id}=s3000",
-        f"https://drive.google.com/thumbnail?id={file_id}&sz=w2500",
+        f"https://lh3.googleusercontent.com/d/{file_id}=s1600",
+        f"https://drive.google.com/thumbnail?id={file_id}&sz=w1600",
     ):
         try:
             req = urllib.request.Request(cdn_url, headers={"User-Agent": "Mozilla/5.0"})

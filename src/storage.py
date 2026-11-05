@@ -29,6 +29,11 @@ def _fetch_master_records(_sheet) -> list[dict[str, Any]]:
     return _sheet.get_all_records()
 
 
+@st.cache_data(show_spinner=False)
+def _read_local_master_file(file_path: Path) -> pd.DataFrame:
+    return pd.read_parquet(file_path)
+
+
 @st.cache_data(ttl=15, show_spinner=False)
 def _fetch_annotation_records(_sheet) -> list[dict[str, Any]]:
     return _sheet.get_all_records()
@@ -84,7 +89,7 @@ class GoogleSheetsStore:
         """Fetch master cases records (loads local parquet snapshot by default)."""
         if not force_refresh and LOCAL_MASTER_FILE.exists():
             try:
-                df = pd.read_parquet(LOCAL_MASTER_FILE)
+                df = _read_local_master_file(LOCAL_MASTER_FILE)
                 if len(df) >= 5400 and "image_url" in df.columns:
                     return df
             except Exception:

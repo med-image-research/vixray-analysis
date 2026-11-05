@@ -72,20 +72,28 @@ def main() -> None:
     if active_tab != "Chi tiết ca bệnh" and "case" in st.query_params:
         del st.query_params["case"]
 
-    tabs = st.tabs(
-        TAB_NAMES,
-        key="active_main_tab",
-        on_change="rerun",
-    )
+    try:
+        tabs = st.tabs(
+            TAB_NAMES,
+            key="active_main_tab",
+            on_change="rerun",
+        )
+        lazy_tabs = True
+    except TypeError:
+        tabs = st.tabs(TAB_NAMES)
+        lazy_tabs = False
 
     with tabs[0]:
-        overview.render(filtered)
+        if not lazy_tabs or getattr(tabs[0], "open", active_tab == "Tổng quan"):
+            overview.render(filtered)
 
     with tabs[1]:
-        reference_findings.render(data, filtered, store)
+        if not lazy_tabs or getattr(tabs[1], "open", active_tab == "Danh sách gán nhãn"):
+            reference_findings.render(data, filtered, store)
 
     with tabs[2]:
-        case_viewer.render(data, filtered, store)
+        if not lazy_tabs or getattr(tabs[2], "open", active_tab == "Chi tiết ca bệnh"):
+            case_viewer.render(data, filtered, store)
 
 
 if __name__ == "__main__":

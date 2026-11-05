@@ -102,7 +102,7 @@ div[data-testid="stCanvas"] {
 def configure_page() -> None:
     """Set up page layout, title, and theme."""
     st.set_page_config(
-        page_title="Không gian gán nhãn ViX-Ray",
+        page_title="ViX-Ray Workspace",
         layout="wide",
         initial_sidebar_state="expanded",
     )

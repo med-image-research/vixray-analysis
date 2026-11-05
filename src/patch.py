@@ -3,13 +3,14 @@ from __future__ import annotations
 
 import base64
 import io
-import re
 from pathlib import Path
 import numpy as np
 import streamlit as st
+import streamlit.components.v1 as components
 import streamlit.elements.image as st_image
+from PIL import Image
 
-# 1. Compatibility for st_image.image_to_url if missing
+# 1. Compatibility for st_image.image_to_url if missing in Streamlit >= 1.40
 if not hasattr(st_image, "image_to_url"):
     try:
         from streamlit.elements.lib.image_utils import image_to_url as _new_image_to_url
@@ -24,55 +25,17 @@ if not hasattr(st_image, "image_to_url"):
         pass
 
 
-# 2. Patch frontend JS bundle of streamlit-drawable-canvas
-# The React bundle executes `e.src = n + h` where `n = origin` from `?streamlitUrl=...`.
-# On Streamlit Cloud deployments, `n` is `https://<subdomain>.streamlit.app`.
-# If `h` is a Base64 data URL (`data:image/...`), `n + h` creates `https://<domain>data:image/...`
-# which fails to load, leaving the canvas background completely blank.
-# We patch `e.src=n+h` to `e.src=(h&&(h.indexOf("data:")===0||h.indexOf("http")===0))?h:n+h`.
-def _patch_drawable_canvas_js() -> None:
-    try:
-        import streamlit_drawable_canvas as sdc
+# 2. Self-contained Custom Component for Canvas
+# We bundle the patched React frontend directly inside `src/canvas_frontend`.
+# This completely eliminates issues on Streamlit Cloud where:
+# - site-packages may be read-only or impossible to monkey-patch at runtime
+# - CDNs or reverse proxies prepend origin domain to Base64 data URLs (e.g. https://...data:image/...)
+# - image_to_url / MediaFileManager paths fail or throw 404s
+FRONTEND_DIR = Path(__file__).resolve().parent / "canvas_frontend"
+_custom_canvas_func = components.declare_component("vixray_canvas", path=str(FRONTEND_DIR))
 
-        build_dir = Path(sdc.__file__).resolve().parent / "frontend" / "build"
-        if not build_dir.exists():
-            return
-
-        js_dir = build_dir / "static" / "js"
-        if js_dir.exists():
-            target = "e.src=n+h"
-            replacement = 'e.src=(h&&(h.indexOf("data:")===0||h.indexOf("http")===0))?h:n+h'
-            for js_file in js_dir.glob("main.*.chunk.js"):
-                if "fixed" in js_file.name:
-                    continue
-                content = js_file.read_text(encoding="utf-8")
-                if target in content:
-                    patched = content.replace(target, replacement)
-                    js_file.write_text(patched, encoding="utf-8")
-                    fixed_file = js_dir / "main.fixed.chunk.js"
-                    fixed_file.write_text(patched, encoding="utf-8")
-
-        index_file = build_dir / "index.html"
-        if index_file.exists():
-            html = index_file.read_text(encoding="utf-8")
-            new_html = re.sub(
-                r'src="\./static/js/main\.[0-9a-f]+\.chunk\.js"',
-                'src="./static/js/main.fixed.chunk.js"',
-                html,
-            )
-            if new_html != html:
-                index_file.write_text(new_html, encoding="utf-8")
-    except Exception:
-        pass
-
-
-_patch_drawable_canvas_js()
-
-
-# 3. Patch streamlit_drawable_canvas.st_canvas to reliably encode background_image to Base64
 try:
     import streamlit_drawable_canvas as sdc
-    from PIL import Image
 
     def _robust_st_canvas(
         fill_color: str = "#eee",
@@ -101,12 +64,13 @@ try:
                 background_image_url = f"data:image/png;base64,{b64}"
             background_color = ""
 
-        initial_drawing = (
-            {"version": "4.4.0"} if initial_drawing is None else initial_drawing
-        )
+        if initial_drawing is None:
+            initial_drawing = {"version": "4.4.0"}
+        else:
+            initial_drawing = dict(initial_drawing)
         initial_drawing["background"] = background_color
 
-        component_value = sdc._component_func(
+        component_value = _custom_canvas_func(
             fillColor=fill_color,
             strokeWidth=stroke_width,
             strokeColor=stroke_color,
@@ -123,13 +87,17 @@ try:
             default=None,
         )
         if component_value is None:
-            return sdc.CanvasResult
+            return sdc.CanvasResult(None, None)
 
         return sdc.CanvasResult(
             np.asarray(sdc._data_url_to_image(component_value["data"])),
             component_value["raw"],
         )
 
+    # Patch both sdc.st_canvas and export it directly
     sdc.st_canvas = _robust_st_canvas
+    sdc._component_func = _custom_canvas_func
+    st_canvas = _robust_st_canvas
+
 except Exception:
-    pass
+    st_canvas = None

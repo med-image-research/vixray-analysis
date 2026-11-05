@@ -19,11 +19,16 @@ from src.models import DatasetBundle, FilteredBundle
 from src.storage import GoogleSheetsStore
 
 try:
-    from streamlit_drawable_canvas import st_canvas
+    from src.patch import st_canvas
 
-    CANVAS_AVAILABLE = True
-except ImportError:
-    CANVAS_AVAILABLE = False
+    CANVAS_AVAILABLE = st_canvas is not None
+except Exception:
+    try:
+        from streamlit_drawable_canvas import st_canvas
+
+        CANVAS_AVAILABLE = True
+    except ImportError:
+        CANVAS_AVAILABLE = False
 
 
 COLOR_MAP = {

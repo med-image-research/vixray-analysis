@@ -132,7 +132,7 @@ def _render_kpi_summary(case_row: pd.Series, case_findings: pd.DataFrame) -> Non
                 total_boxes += len(parse_boxes(b_raw))
             except Exception:
                 pass
-    m6.metric("Số khung đã vẽ", total_boxes)
+    m6.metric("Số bounding box", total_boxes)
     st.markdown("---")
 
 
@@ -150,6 +150,7 @@ def _render_image_view(
         caption = f"{selected_id} · Kích thước gốc: {orig_w} × {orig_h}px"
         _render_clickable_image(annotated_image, file_id, caption)
 
+        st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
         st.markdown("**Chú thích màu sắc:**")
         for row in case_findings.itertuples():
             ref_id = getattr(row, "reference_finding_id", "RF")
@@ -164,7 +165,7 @@ def _render_image_view(
                 f'border-radius:2px;margin-right:8px;vertical-align:middle;"></span>'
                 f'<b>{ref_id}</b>: {finding_text} '
                 f'<span class="status-badge status-{status.lower().replace(" ", "")}">{status_vn}</span> '
-                f'<i>· {boxes_count} khung</i>'
+                f'<i>- {boxes_count} bounding box</i>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
@@ -184,7 +185,7 @@ def _render_canvas_view(
         st.error("Chưa tải được component Canvas.")
         return []
 
-    st.caption("Dùng chuột kéo trên ảnh để vẽ khung. Sử dụng thanh công cụ bên trên ảnh để hoàn tác hoặc xóa.")
+    st.caption("Dùng chuột kéo trên ảnh để vẽ bounding box. Sử dụng thanh công cụ bên trên ảnh để hoàn tác hoặc xóa.")
 
     selected_color = st.radio(
         "Màu viền:",
@@ -236,7 +237,7 @@ def _render_canvas_view(
         st.session_state["form_status"] = "Annotated" if drawn_boxes else "Pending"
 
     if drawn_boxes:
-        st.success(f"Đã vẽ **{len(drawn_boxes)}** khung tọa độ.")
+        st.success(f"Đã vẽ **{len(drawn_boxes)}** bounding box.")
 
     return drawn_boxes
 
@@ -296,7 +297,7 @@ def _render_findings_list(case_findings: pd.DataFrame, store: GoogleSheetsStore)
                     st.session_state["form_finding_text"] = f_txt
                     st.session_state["form_boxes"] = boxes_val
                     st.session_state["form_status"] = stt
-                    st.session_state["pending_mode_switch"] = "Chế độ vẽ khung"
+                    st.session_state["pending_mode_switch"] = "Chế độ vẽ bounding box"
                     st.session_state.pop("last_seen_boxes", None)
                     st.rerun()
             with c_box3:
@@ -458,7 +459,7 @@ def render(
 
         mode = st.radio(
             "Chế độ hiển thị:",
-            ["Xem Reference Finding đã lưu", "Chế độ vẽ khung"],
+            ["Xem Reference Finding đã lưu", "Chế độ vẽ bounding box"],
             horizontal=True,
             key="case_viewer_mode_radio",
         )
@@ -473,5 +474,5 @@ def render(
         _render_clinical_context(selected_id, case_row)
         _render_findings_list(case_findings, store)
 
-        if mode == "Chế độ vẽ khung" or is_editing:
+        if mode == "Chế độ vẽ bounding box" or is_editing:
             _render_annotation_form(store, selected_id, case_row, is_editing)

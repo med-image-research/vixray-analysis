@@ -18,8 +18,8 @@ def get_store() -> GoogleSheetsStore:
 def main() -> None:
     configure_page()
 
-    st.title("Không gian gán nhãn ViX-Ray")
-    st.caption("Hệ thống nghiên cứu và gán nhãn không gian cho ảnh X-quang ngực ViX-Ray.")
+    st.title("ViX-Ray Workspace")
+    st.caption("Hệ thống nghiên cứu và gán nhãn cho ảnh X-quang ngực ViX-Ray.")
 
     try:
         store = get_store()

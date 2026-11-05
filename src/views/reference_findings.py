@@ -221,6 +221,7 @@ def render(
         if clicked_id in all_ids:
             st.session_state.current_case_idx = all_ids.index(clicked_id)
             st.session_state["target_case_id"] = clicked_id
+            st.query_params["tab"] = "case-viewer"
             st.query_params["case"] = clicked_id
             st.session_state["pending_tab_switch"] = "Chi tiết ca bệnh"
             st.rerun()

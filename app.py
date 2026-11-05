@@ -31,20 +31,49 @@ def main() -> None:
     selection = render_sidebar(data, store)
     filtered = apply_filters(data, selection)
 
+    TAB_NAMES = ["Tổng quan", "Danh sách gán nhãn", "Chi tiết ca bệnh"]
+    TAB_SLUG_MAP = {
+        "Tổng quan": "overview",
+        "Danh sách gán nhãn": "findings",
+        "Chi tiết ca bệnh": "case-viewer",
+    }
+    SLUG_TAB_MAP = {
+        "overview": "Tổng quan",
+        "findings": "Danh sách gán nhãn",
+        "reference-findings": "Danh sách gán nhãn",
+        "case-viewer": "Chi tiết ca bệnh",
+        "cases": "Chi tiết ca bệnh",
+    }
+
+    query_tab = str(st.query_params.get("tab", "")).strip().lower()
+    query_case = str(st.query_params.get("case", "") or st.query_params.get("image_id", "")).strip()
+
     if "pending_tab_switch" in st.session_state:
         st.session_state["active_main_tab"] = st.session_state.pop("pending_tab_switch")
         st.session_state["case_table_selection"] = {
             "selection": {"rows": [], "columns": [], "cells": []}
         }
     elif "active_main_tab" not in st.session_state:
-        st.session_state["active_main_tab"] = "Tổng quan"
+        if query_case:
+            st.session_state["active_main_tab"] = "Chi tiết ca bệnh"
+        elif query_tab in SLUG_TAB_MAP:
+            st.session_state["active_main_tab"] = SLUG_TAB_MAP[query_tab]
+        else:
+            st.session_state["active_main_tab"] = "Tổng quan"
+
+    active_tab = st.session_state.get("active_main_tab", "Tổng quan")
+    if active_tab not in TAB_NAMES:
+        active_tab = "Tổng quan"
+        st.session_state["active_main_tab"] = active_tab
+
+    desired_slug = TAB_SLUG_MAP.get(active_tab, "overview")
+    if st.query_params.get("tab") != desired_slug:
+        st.query_params["tab"] = desired_slug
+    if active_tab != "Chi tiết ca bệnh" and "case" in st.query_params:
+        del st.query_params["case"]
 
     tabs = st.tabs(
-        [
-            "Tổng quan",
-            "Danh sách gán nhãn",
-            "Chi tiết ca bệnh",
-        ],
+        TAB_NAMES,
         key="active_main_tab",
         on_change="rerun",
     )

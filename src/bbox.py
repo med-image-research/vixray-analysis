@@ -111,8 +111,8 @@ def draw_case(
     canvas = image.convert("RGB").copy()
     draw = ImageDraw.Draw(canvas)
     min_dim = min(canvas.size)
-    stroke_width = max(3, round(min_dim * 0.003))
-    font_size = max(14, round(min_dim * 0.018))
+    stroke_width = max(2, round(min_dim * 0.002))
+    font_size = max(11, round(min_dim * 0.011))
     font = _get_font(font_size)
 
     rows_list = list(rows.itertuples() if hasattr(rows, "itertuples") else rows)
@@ -139,8 +139,8 @@ def draw_case(
 
         short_id = key.split("-")[-1]
         label = f"{short_id} - {finding_text}" if finding_text else short_id
-        if len(label) > 40:
-            label = label[:37] + "..."
+        if len(label) > 32:
+            label = label[:29] + "..."
 
         for x, y, width, height in boxes:
             x2, y2 = x + width, y + height
@@ -149,8 +149,8 @@ def draw_case(
             text_box = draw.textbbox((0, 0), label, font=font)
             tw = text_box[2] - text_box[0]
             th = text_box[3] - text_box[1]
-            pad_x = max(3, round(font_size * 0.25))
-            pad_y = max(2, round(font_size * 0.18))
+            pad_x = max(3, round(font_size * 0.22))
+            pad_y = max(2, round(font_size * 0.14))
 
             badge_h = th + pad_y * 2
             badge_w = tw + pad_x * 2

@@ -138,6 +138,8 @@ def _render_kpi_summary(case_row: pd.Series, case_findings: pd.DataFrame) -> Non
             except Exception:
                 pass
     m6.metric("Số bounding box", total_boxes)
+    selected_id = str(case_row.get("image_id", ""))
+    st.caption(f"🔗 **URL chia sẻ ca bệnh:** `?tab=case-viewer&case={selected_id}`")
     st.markdown("---")
 
 
@@ -208,7 +210,7 @@ def _render_canvas_view(
 
     initial_drawing = None
     if is_editing:
-        raw_b = st.session_state.get("form_boxes", "[]")
+        raw_b = st.session_state.get("edit_initial_boxes", st.session_state.get("form_boxes", "[]"))
         try:
             parsed_b = parse_boxes(raw_b)
             initial_drawing = _make_initial_drawing(
@@ -235,8 +237,11 @@ def _render_canvas_view(
     objects = canvas_result.json_data.get("objects", []) if canvas_result and canvas_result.json_data else []
     drawn_boxes = extract_canvas_boxes(objects, scale_x=scale, scale_y=scale)
 
+    if is_editing and "last_seen_boxes" not in st.session_state:
+        st.session_state["last_seen_boxes"] = parse_boxes(st.session_state.get("edit_initial_boxes", "[]"))
+
     last_seen_boxes = st.session_state.get("last_seen_boxes")
-    if last_seen_boxes != drawn_boxes:
+    if canvas_result and canvas_result.json_data is not None and last_seen_boxes != drawn_boxes:
         st.session_state["last_seen_boxes"] = drawn_boxes
         st.session_state["form_boxes"] = str(drawn_boxes)
         st.session_state["form_status"] = "Annotated" if drawn_boxes else "Pending"
@@ -302,8 +307,9 @@ def _render_findings_list(case_findings: pd.DataFrame, store: GoogleSheetsStore)
                     st.session_state["form_finding_text"] = f_txt
                     st.session_state["form_boxes"] = boxes_val
                     st.session_state["form_status"] = stt
+                    st.session_state["edit_initial_boxes"] = boxes_val
+                    st.session_state["last_seen_boxes"] = parse_boxes(boxes_val)
                     st.session_state["pending_mode_switch"] = "Chế độ vẽ bounding box"
-                    st.session_state.pop("last_seen_boxes", None)
                     st.rerun()
             with c_box3:
                 if st.button("Xóa", key=f"del_{rf_id}", use_container_width=True):
@@ -370,6 +376,7 @@ def _render_annotation_form(
         st.session_state.editing_rf_id = None
         st.session_state.pop("form_finding_text", None)
         st.session_state.pop("form_boxes", None)
+        st.session_state.pop("edit_initial_boxes", None)
         st.session_state.pop("last_seen_boxes", None)
         st.session_state["form_status"] = "Pending"
         if is_editing:
@@ -400,6 +407,7 @@ def _render_annotation_form(
             st.session_state.editing_rf_id = None
             st.session_state.pop("form_finding_text", None)
             st.session_state.pop("form_boxes", None)
+            st.session_state.pop("edit_initial_boxes", None)
             st.session_state.pop("last_seen_boxes", None)
             st.session_state["pending_mode_switch"] = "Xem Reference Finding đã lưu"
             st.rerun()
@@ -430,18 +438,23 @@ def render(
             st.session_state.current_case_idx = case_ids.index(target_id)
             st.session_state.query_case_handled = target_id
 
-    query_case = st.query_params.get("case") or st.query_params.get("image_id")
+    query_case = str(st.query_params.get("case", "") or st.query_params.get("image_id", "")).strip()
     if query_case and query_case in case_ids and st.session_state.get("query_case_handled") != query_case:
         st.session_state.current_case_idx = case_ids.index(query_case)
         st.session_state.query_case_handled = query_case
 
     selected_id = _render_navigation(case_ids)
 
+    # Keep URL query parameters synchronized with the currently inspected case
+    st.query_params["tab"] = "case-viewer"
+    st.query_params["case"] = selected_id
+
     if st.session_state.get("previous_case_id") != selected_id:
         st.session_state["previous_case_id"] = selected_id
         st.session_state.pop("editing_rf_id", None)
         st.session_state.pop("form_finding_text", None)
         st.session_state.pop("form_boxes", None)
+        st.session_state.pop("edit_initial_boxes", None)
         st.session_state.pop("last_seen_boxes", None)
         st.session_state["form_status"] = "Pending"
 

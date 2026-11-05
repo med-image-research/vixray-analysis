@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import json
 from collections.abc import Iterable, Mapping
+from pathlib import Path
 from typing import Any
 
 from PIL import Image, ImageDraw, ImageFont
@@ -69,16 +70,50 @@ def finding_colors(rows: Iterable[object]) -> dict[str, str]:
     return colors
 
 
+def _get_font(size: int = 14) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    """Load a TrueType font that fully supports Vietnamese Unicode characters."""
+    # 1. Bundled DejaVuSans-Bold font in repo
+    local_font = Path(__file__).resolve().parent / "fonts" / "DejaVuSans-Bold.ttf"
+    if local_font.exists():
+        try:
+            return ImageFont.truetype(str(local_font), size)
+        except Exception:
+            pass
+
+    # 2. Matplotlib fonts directory
+    try:
+        import matplotlib
+
+        font_dir = Path(matplotlib.__file__).parent / "mpl-data" / "fonts" / "ttf"
+        for name in ["DejaVuSans-Bold.ttf", "DejaVuSans.ttf"]:
+            p = font_dir / name
+            if p.exists():
+                return ImageFont.truetype(str(p), size)
+    except Exception:
+        pass
+
+    # 3. Common system fonts
+    for font_name in ["arial.ttf", "Arial.ttf", "DejaVuSans.ttf", "tahoma.ttf", "segoeui.ttf"]:
+        try:
+            return ImageFont.truetype(font_name, size)
+        except Exception:
+            continue
+
+    return ImageFont.load_default()
+
+
 def draw_case(
     image: Image.Image,
     rows: Any,
     colors: Mapping[str, str] | None = None,
 ) -> Image.Image:
-    """Render bounding boxes and clinical labels onto the image."""
+    """Render bounding boxes and clinical labels onto the image with full Unicode support."""
     canvas = image.convert("RGB").copy()
     draw = ImageDraw.Draw(canvas)
-    stroke_width = max(3, round(min(canvas.size) * 0.0028))
-    font = ImageFont.load_default()
+    min_dim = min(canvas.size)
+    stroke_width = max(3, round(min_dim * 0.003))
+    font_size = max(14, round(min_dim * 0.018))
+    font = _get_font(font_size)
 
     rows_list = list(rows.itertuples() if hasattr(rows, "itertuples") else rows)
     color_map = dict(colors or finding_colors(rows_list))
@@ -103,25 +138,35 @@ def draw_case(
             continue
 
         short_id = key.split("-")[-1]
-        label = f"{short_id} · {finding_text}" if finding_text else short_id
-        if len(label) > 36:
-            label = label[:33] + "..."
+        label = f"{short_id} - {finding_text}" if finding_text else short_id
+        if len(label) > 40:
+            label = label[:37] + "..."
 
         for x, y, width, height in boxes:
             x2, y2 = x + width, y + height
             draw.rectangle((x, y, x2, y2), outline=color, width=stroke_width)
 
-            text_x = int(x)
-            text_y = max(0, int(y) - 18)
-            text_box = draw.textbbox((text_x, text_y), label, font=font)
-            padded_box = (
-                text_box[0] - 2,
-                text_box[1] - 1,
-                text_box[2] + 2,
-                text_box[3] + 1,
-            )
-            draw.rectangle(padded_box, fill=color)
-            draw.text((text_x, text_y), label, fill="white", font=font)
+            text_box = draw.textbbox((0, 0), label, font=font)
+            tw = text_box[2] - text_box[0]
+            th = text_box[3] - text_box[1]
+            pad_x = max(3, round(font_size * 0.25))
+            pad_y = max(2, round(font_size * 0.18))
+
+            badge_h = th + pad_y * 2
+            badge_w = tw + pad_x * 2
+
+            if y - badge_h >= 0:
+                badge_top = y - badge_h
+                badge_bottom = y
+            else:
+                badge_top = y
+                badge_bottom = y + badge_h
+
+            badge_left = int(x)
+            badge_right = int(x) + badge_w
+
+            draw.rectangle((badge_left, badge_top, badge_right, badge_bottom), fill=color)
+            draw.text((badge_left + pad_x, badge_top + pad_y), label, fill="white", font=font)
 
     return canvas
 

@@ -39,6 +39,14 @@ COLOR_MAP = {
 }
 
 
+def _clear_form_state() -> None:
+    """Safely reset all annotation form fields and editing session state."""
+    st.session_state.editing_rf_id = None
+    for k in ("form_finding_text", "form_boxes", "edit_initial_boxes", "last_seen_boxes"):
+        st.session_state.pop(k, None)
+    st.session_state["form_status"] = "Pending"
+
+
 def _make_initial_drawing(
     boxes: list[list[int] | tuple[float, float, float, float]],
     scale: float,
@@ -317,7 +325,8 @@ def _render_findings_list(case_findings: pd.DataFrame, store: GoogleSheetsStore)
             with c_box3:
                 if st.button("Xóa", key=f"del_{rf_id}", use_container_width=True):
                     store.delete_annotation(rf_id)
-                    st.session_state.pop("editing_rf_id", None)
+                    if st.session_state.get("editing_rf_id") == rf_id:
+                        _clear_form_state()
                     st.rerun()
     else:
         st.info("Chưa có Reference Finding nào cho ca này.")
@@ -378,12 +387,7 @@ def _render_annotation_form(
         reset_clicked = st.button(cancel_btn_label, use_container_width=True)
 
     if reset_clicked:
-        st.session_state.editing_rf_id = None
-        st.session_state.pop("form_finding_text", None)
-        st.session_state.pop("form_boxes", None)
-        st.session_state.pop("edit_initial_boxes", None)
-        st.session_state.pop("last_seen_boxes", None)
-        st.session_state["form_status"] = "Pending"
+        _clear_form_state()
         if is_editing:
             st.session_state["pending_mode_switch"] = "Xem Reference Finding đã lưu"
         st.rerun()
@@ -409,11 +413,7 @@ def _render_annotation_form(
         }
 
         if store.save_annotation(new_record):
-            st.session_state.editing_rf_id = None
-            st.session_state.pop("form_finding_text", None)
-            st.session_state.pop("form_boxes", None)
-            st.session_state.pop("edit_initial_boxes", None)
-            st.session_state.pop("last_seen_boxes", None)
+            _clear_form_state()
             st.session_state["pending_mode_switch"] = "Xem Reference Finding đã lưu"
             st.rerun()
         else:
@@ -457,12 +457,7 @@ def render(
 
     if st.session_state.get("previous_case_id") != selected_id:
         st.session_state["previous_case_id"] = selected_id
-        st.session_state.pop("editing_rf_id", None)
-        st.session_state.pop("form_finding_text", None)
-        st.session_state.pop("form_boxes", None)
-        st.session_state.pop("edit_initial_boxes", None)
-        st.session_state.pop("last_seen_boxes", None)
-        st.session_state["form_status"] = "Pending"
+        _clear_form_state()
 
     case_row = master[master["image_id"] == selected_id].iloc[0]
     case_findings = (

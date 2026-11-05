@@ -4,7 +4,6 @@ from __future__ import annotations
 import base64
 import io
 from pathlib import Path
-import numpy as np
 import streamlit as st
 import streamlit.components.v1 as components
 import streamlit.elements.image as st_image
@@ -59,9 +58,9 @@ try:
             else:
                 resized_img = sdc._resize_img(background_image, height, width)
                 buf = io.BytesIO()
-                resized_img.save(buf, format="PNG")
+                resized_img.save(buf, format="JPEG", quality=88)
                 b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
-                background_image_url = f"data:image/png;base64,{b64}"
+                background_image_url = f"data:image/jpeg;base64,{b64}"
             background_color = ""
 
         if initial_drawing is None:

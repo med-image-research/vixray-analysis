@@ -47,6 +47,7 @@ class GoogleSheetsStore:
         self.master_sheet = None
         self.annotation_sheet = None
         self.backend_type = "local"
+        self._cached_annotations: pd.DataFrame | None = None
         self._init_backend()
 
     def _init_backend(self) -> None:
@@ -139,8 +140,12 @@ class GoogleSheetsStore:
         return True
 
     def get_annotations(self, force_refresh: bool = False) -> pd.DataFrame:
-        """Fetch all Reference Findings annotations."""
+        """Fetch all Reference Findings annotations with in-memory caching."""
+        if not force_refresh and self._cached_annotations is not None:
+            return self._cached_annotations.copy()
+
         if force_refresh:
+            self._cached_annotations = None
             _fetch_annotation_records.clear()
 
         if self.is_sheets_connected and self.annotation_sheet is not None:
@@ -155,7 +160,8 @@ class GoogleSheetsStore:
                     df[ANNOTATION_COLUMNS].to_csv(LOCAL_ANNOTATIONS_FILE, index=False)
                 except Exception:
                     pass
-                return df[ANNOTATION_COLUMNS]
+                self._cached_annotations = df[ANNOTATION_COLUMNS].copy()
+                return self._cached_annotations.copy()
             except Exception as exc:
                 st.warning(f"Không thể nạp gán nhãn từ Google Sheets ({exc}), dùng bản lưu cục bộ.")
 
@@ -165,11 +171,14 @@ class GoogleSheetsStore:
                 for col in ANNOTATION_COLUMNS:
                     if col not in df.columns:
                         df[col] = ""
-                return df[ANNOTATION_COLUMNS]
+                self._cached_annotations = df[ANNOTATION_COLUMNS].copy()
+                return self._cached_annotations.copy()
             except Exception:
                 pass
 
-        return pd.DataFrame(columns=ANNOTATION_COLUMNS)
+        empty_df = pd.DataFrame(columns=ANNOTATION_COLUMNS)
+        self._cached_annotations = empty_df.copy()
+        return empty_df
 
     def save_annotation(self, record: dict[str, Any]) -> bool:
         """Create or update a Reference Finding annotation."""
@@ -194,6 +203,7 @@ class GoogleSheetsStore:
 
         LOCAL_ANNOTATIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
         df.to_csv(LOCAL_ANNOTATIONS_FILE, index=False)
+        self._cached_annotations = df[ANNOTATION_COLUMNS].copy()
 
         if self.is_sheets_connected and self.annotation_sheet is not None:
             try:
@@ -220,6 +230,7 @@ class GoogleSheetsStore:
 
         LOCAL_ANNOTATIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
         updated_df.to_csv(LOCAL_ANNOTATIONS_FILE, index=False)
+        self._cached_annotations = updated_df[ANNOTATION_COLUMNS].copy()
 
         if self.is_sheets_connected and self.annotation_sheet is not None:
             try:

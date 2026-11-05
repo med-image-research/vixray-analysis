@@ -57,6 +57,7 @@ def main() -> None:
         st.session_state["case_table_selection"] = {
             "selection": {"rows": [], "columns": [], "cells": []}
         }
+        st.session_state["last_synced_tab"] = TAB_SLUG_MAP.get(st.session_state["active_main_tab"], "overview")
     elif "active_main_tab" not in st.session_state:
         if query_case:
             st.session_state["active_main_tab"] = "Chi tiết ca bệnh"
@@ -64,12 +65,17 @@ def main() -> None:
             st.session_state["active_main_tab"] = SLUG_TAB_MAP[query_tab]
         else:
             st.session_state["active_main_tab"] = "Tổng quan"
+        st.session_state["last_synced_tab"] = TAB_SLUG_MAP.get(st.session_state["active_main_tab"], "overview")
+    elif query_tab and query_tab != st.session_state.get("last_synced_tab") and query_tab in SLUG_TAB_MAP:
+        st.session_state["active_main_tab"] = SLUG_TAB_MAP[query_tab]
+        st.session_state["last_synced_tab"] = query_tab
 
     target_tab = st.session_state.get("active_main_tab", "Tổng quan")
     if target_tab not in TAB_NAMES:
         target_tab = "Tổng quan"
         st.session_state["active_main_tab"] = target_tab
 
+    supports_rerun = True
     try:
         tabs = st.tabs(
             TAB_NAMES,
@@ -86,23 +92,37 @@ def main() -> None:
             )
         except TypeError:
             tabs = st.tabs(TAB_NAMES)
+            supports_rerun = False
 
     current_tab = st.session_state.get("active_main_tab", "Tổng quan")
     desired_slug = TAB_SLUG_MAP.get(current_tab, "overview")
+    st.session_state["last_synced_tab"] = desired_slug
+
     if st.query_params.get("tab") != desired_slug:
         st.query_params["tab"] = desired_slug
 
     if current_tab != "Chi tiết ca bệnh" and "case" in st.query_params:
         del st.query_params["case"]
 
+    def _should_render(tab_idx: int, tab_name: str) -> bool:
+        if not supports_rerun:
+            return True
+        is_open = getattr(tabs[tab_idx], "open", None)
+        if is_open is not None:
+            return bool(is_open)
+        return current_tab == tab_name
+
     with tabs[0]:
-        overview.render(filtered)
+        if _should_render(0, "Tổng quan"):
+            overview.render(filtered)
 
     with tabs[1]:
-        reference_findings.render(data, filtered, store)
+        if _should_render(1, "Danh sách gán nhãn"):
+            reference_findings.render(data, filtered, store)
 
     with tabs[2]:
-        case_viewer.render(data, filtered, store)
+        if _should_render(2, "Chi tiết ca bệnh"):
+            case_viewer.render(data, filtered, store)
 
 
 if __name__ == "__main__":

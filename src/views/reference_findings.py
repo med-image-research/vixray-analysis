@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -32,6 +33,7 @@ COLUMN_LABELS = {
 }
 
 
+@st.cache_data(show_spinner=False)
 def calculate_case_summary(master: pd.DataFrame, annotations: pd.DataFrame) -> pd.DataFrame:
     """Aggregate per-case reference finding counts and annotation status."""
     df = master.copy()
@@ -63,19 +65,17 @@ def calculate_case_summary(master: pd.DataFrame, annotations: pd.DataFrame) -> p
     df["annotated_findings"] = df["annotated_findings"].fillna(0).astype(int)
     df["pending_findings"] = df["pending_findings"].fillna(0).astype(int)
 
-    def _resolve_status(row: pd.Series) -> str:
-        total = int(row["total_findings"])
-        pending = int(row["pending_findings"])
-        annotated = int(row["annotated_findings"])
-        if total == 0:
-            return "Không annotate"
-        if pending == 0:
-            return "Đã annotate"
-        if annotated > 0:
-            return "Đang annotate"
-        return "Chưa annotate"
-
-    df["case_status"] = df.apply(_resolve_status, axis=1)
+    conditions = [
+        df["total_findings"] == 0,
+        df["pending_findings"] == 0,
+        df["annotated_findings"] > 0,
+    ]
+    choices = [
+        "Không annotate",
+        "Đã annotate",
+        "Đang annotate",
+    ]
+    df["case_status"] = np.select(conditions, choices, default="Chưa annotate")
     return df
 
 

@@ -321,13 +321,18 @@ def _render_annotation_form(
     is_editing: bool,
 ) -> None:
     st.markdown("---")
-    st.markdown(f"#### {'Cập nhật Reference Finding' if is_editing else 'Thêm Reference Finding mới'}")
-
     current_rf_id = (
         st.session_state.editing_rf_id
         if is_editing
         else store.get_next_reference_id(selected_id)
     )
+
+    if is_editing:
+        st.info(f"Đang chỉnh sửa: **{current_rf_id}**")
+        st.markdown("#### Cập nhật Reference Finding")
+    else:
+        st.markdown("#### Thêm Reference Finding mới")
+
     st.text_input("Mã định danh", value=current_rf_id, disabled=True)
 
     form_finding_text = st.text_input(
@@ -355,9 +360,11 @@ def _render_annotation_form(
 
     btn_c1, btn_c2 = st.columns(2)
     with btn_c1:
-        save_clicked = st.button("Lưu Reference Finding", type="primary", use_container_width=True)
+        save_btn_label = "Cập nhật Reference Finding" if is_editing else "Lưu Reference Finding"
+        save_clicked = st.button(save_btn_label, type="primary", use_container_width=True)
     with btn_c2:
-        reset_clicked = st.button("Làm mới biểu mẫu", use_container_width=True)
+        cancel_btn_label = "Hủy chỉnh sửa" if is_editing else "Làm mới biểu mẫu"
+        reset_clicked = st.button(cancel_btn_label, use_container_width=True)
 
     if reset_clicked:
         st.session_state.editing_rf_id = None
@@ -365,6 +372,8 @@ def _render_annotation_form(
         st.session_state.pop("form_boxes", None)
         st.session_state.pop("last_seen_boxes", None)
         st.session_state["form_status"] = "Pending"
+        if is_editing:
+            st.session_state["pending_mode_switch"] = "Xem Reference Finding đã lưu"
         st.rerun()
 
     if save_clicked:
@@ -428,6 +437,14 @@ def render(
 
     selected_id = _render_navigation(case_ids)
 
+    if st.session_state.get("previous_case_id") != selected_id:
+        st.session_state["previous_case_id"] = selected_id
+        st.session_state.pop("editing_rf_id", None)
+        st.session_state.pop("form_finding_text", None)
+        st.session_state.pop("form_boxes", None)
+        st.session_state.pop("last_seen_boxes", None)
+        st.session_state["form_status"] = "Pending"
+
     case_row = master[master["image_id"] == selected_id].iloc[0]
     case_findings = (
         annotations[annotations["image_id"] == selected_id].copy()
@@ -471,13 +488,20 @@ def render(
 
         is_editing = st.session_state.get("editing_rf_id") is not None
         if mode == "Xem Reference Finding đã lưu":
-            _render_image_view(img, selected_id, file_id, case_findings, orig_w, orig_h)
+            view_findings = (
+                case_findings[case_findings["reference_finding_id"] == st.session_state.editing_rf_id]
+                if is_editing and not case_findings.empty
+                else case_findings
+            )
+            _render_image_view(img, selected_id, file_id, view_findings, orig_w, orig_h)
         else:
             _render_canvas_view(img, selected_id, is_editing, orig_w, orig_h)
 
     with right_col:
         _render_clinical_context(selected_id, case_row)
-        _render_findings_list(case_findings, store)
+
+        if not is_editing:
+            _render_findings_list(case_findings, store)
 
         if mode == "Chế độ vẽ bounding box" or is_editing:
             _render_annotation_form(store, selected_id, case_row, is_editing)

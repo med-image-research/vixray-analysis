@@ -291,8 +291,6 @@ def _render_clinical_context(selected_id: str, case_row: pd.Series) -> None:
             "Đường dẫn ảnh": str(case_row.get("image_url", "")),
         })
 
-    st.markdown("---")
-
 
 def _render_findings_list(case_findings: pd.DataFrame, store: GoogleSheetsStore) -> None:
     st.markdown(f"#### Reference Finding đã lưu ({len(case_findings)})")
@@ -338,8 +336,6 @@ def _render_annotation_form(
     case_row: pd.Series,
     is_editing: bool,
 ) -> None:
-    if not is_editing:
-        st.markdown("---")
     current_rf_id = (
         st.session_state.editing_rf_id
         if is_editing
@@ -514,9 +510,12 @@ def render(
 
     with right_col:
         _render_clinical_context(selected_id, case_row)
+        st.markdown("---")
 
         if not is_editing:
             _render_findings_list(case_findings, store)
+            if mode == "Chế độ vẽ bounding box":
+                st.markdown("---")
 
         if mode == "Chế độ vẽ bounding box" or is_editing:
             _render_annotation_form(store, selected_id, case_row, is_editing)

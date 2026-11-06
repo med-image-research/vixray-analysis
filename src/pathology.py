@@ -238,7 +238,7 @@ HIERARCHICAL_TAXONOMY: list[tuple[str, str, list[str]]] = [
         "Nhu mô phổi",
         "Khối choán chỗ và bất thường trung thất",
         [
-            r"\bu\b",
+            r"(?<![a-zA-Zà-ỹÀ-Ỹ0-9])u(?![a-zA-Zà-ỹÀ-Ỹ0-9])",
             r"khối\s*mờ",
             r"khối\s*choán\s*chỗ",
             r"khối\s*1/2",
@@ -319,9 +319,15 @@ def preprocess_impression_for_pathology(text: str) -> str:
     return " ; ".join(cleaned_clauses)
 
 
+CACHE_VERSION = "v14_standard_20261106_v2"
+
+
 @st.cache_data(show_spinner=False)
-def extract_pathology_matrix_from_series(impressions: pd.Series) -> pd.DataFrame:
-    """Extract binary indicator matrix for all 13 disease groups with caching."""
+def extract_pathology_matrix_from_series(
+    impressions: pd.Series,
+    version: str = CACHE_VERSION,
+) -> pd.DataFrame:
+    """Extract binary indicator matrix for all 14 disease groups with caching."""
     clean_series = impressions.apply(preprocess_impression_for_pathology)
     label_df = pd.DataFrame(index=impressions.index)
 
@@ -339,11 +345,15 @@ def get_pathology_labels(df: pd.DataFrame) -> pd.DataFrame:
     """Retrieve or compute multi-label binary indicators aligned to input dataframe."""
     if df.empty or "impressions" not in df.columns:
         return pd.DataFrame()
-    return extract_pathology_matrix_from_series(df["impressions"])
+    return extract_pathology_matrix_from_series(df["impressions"], version=CACHE_VERSION)
 
 
 @st.cache_data(show_spinner=False)
-def compute_pathology_statistics(df: pd.DataFrame, label_df: pd.DataFrame) -> pd.DataFrame:
+def compute_pathology_statistics(
+    df: pd.DataFrame,
+    label_df: pd.DataFrame,
+    version: str = CACHE_VERSION,
+) -> pd.DataFrame:
     """Compute per-disease prevalence, gender rates, and mean age."""
     if df.empty or label_df.empty:
         return pd.DataFrame()
@@ -390,6 +400,7 @@ def compute_cooccurrence_pairs(
     label_df: pd.DataFrame,
     total_cases: int,
     top_cols_n: int = 10,
+    version: str = CACHE_VERSION,
 ) -> pd.DataFrame:
     """Compute co-occurrence counts and percentage across top prevalent diseases."""
     if label_df.empty or total_cases <= 0:
@@ -414,7 +425,11 @@ def compute_cooccurrence_pairs(
 
 
 @st.cache_data(show_spinner=False)
-def compute_age_group_trends(df: pd.DataFrame, label_df: pd.DataFrame) -> dict[str, Any]:
+def compute_age_group_trends(
+    df: pd.DataFrame,
+    label_df: pd.DataFrame,
+    version: str = CACHE_VERSION,
+) -> dict[str, Any]:
     """Calculate rate of 5 common pathologies by age groups."""
     if df.empty or label_df.empty or "age" not in df.columns:
         return {}
@@ -454,7 +469,10 @@ def compute_age_group_trends(df: pd.DataFrame, label_df: pd.DataFrame) -> dict[s
 
 
 @st.cache_data(show_spinner=False)
-def compute_comorbidity_distribution(label_df: pd.DataFrame) -> list[tuple[str, int, str, float]]:
+def compute_comorbidity_distribution(
+    label_df: pd.DataFrame,
+    version: str = CACHE_VERSION,
+) -> list[tuple[str, int, str, float]]:
     """Compute distribution of number of diseases found per chest X-ray image."""
     if label_df.empty:
         return []

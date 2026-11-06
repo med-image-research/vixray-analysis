@@ -156,7 +156,7 @@ def view_distribution_chart(master: pd.DataFrame) -> go.Figure | None:
 
 def pathology_prevalence_chart(stats_df: pd.DataFrame) -> go.Figure | None:
     """Build clean horizontal bar chart of disease prevalence across 4 organ systems."""
-    name_col = "Tên" if "Tên" in stats_df.columns else ("Tên" if "Tên" in stats_df.columns else "Nhóm bệnh")
+    name_col = "Tên" if "Tên" in stats_df.columns else "Nhóm bệnh"
     if stats_df.empty or name_col not in stats_df.columns:
         return None
 
@@ -194,7 +194,7 @@ def pathology_prevalence_chart(stats_df: pd.DataFrame) -> go.Figure | None:
             title=None,
         ),
         margin=dict(l=10, r=30, t=40, b=50),
-        height=520,
+        height=540,
     )
     return apply_chart_style(fig)
 

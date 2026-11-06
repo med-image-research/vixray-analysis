@@ -372,13 +372,13 @@ def compute_pathology_statistics(df: pd.DataFrame, label_df: pd.DataFrame) -> pd
 
         stats_rows.append({
             "Hệ cơ quan": disease_to_system.get(col, "Khác"),
-            "Nhóm bất thường": col,
-            "Tên gọn": SHORT_LABEL_MAP.get(col, col),
+            "Nhóm bệnh": col,
+            "Tên": SHORT_LABEL_MAP.get(col, col),
             "Số ca": count,
-            "Tỷ lệ P(Bệnh) (%)": round(p_disease, 2),
-            "Tỷ trọng nhãn (%)": round(share_label, 2),
-            "P(Bệnh | Nam) (%)": round(p_male, 2),
-            "P(Bệnh | Nữ) (%)": round(p_female, 2),
+            "Tỷ lệ (%)": round(p_disease, 1),
+            "Tỷ trọng (%)": round(share_label, 1),
+            "Tỷ lệ ở Nam (%)": round(p_male, 1),
+            "Tỷ lệ ở Nữ (%)": round(p_female, 1),
             "Tuổi TB": round(mean_age, 1) if not np.isnan(mean_age) else 0.0,
         })
 
@@ -405,12 +405,12 @@ def compute_cooccurrence_pairs(
             lbl1 = SHORT_LABEL_MAP.get(c1, c1)
             lbl2 = SHORT_LABEL_MAP.get(c2, c2)
             pair_rows.append({
-                "Cặp bệnh lý đồng mắc": f"{lbl1} + {lbl2}",
-                "Số ca đồng mắc": both,
-                "Xác suất đồng mắc (%)": round(p_joint, 2),
+                "Cặp bệnh hay đi kèm": f"{lbl1} + {lbl2}",
+                "Số ca cùng gặp": both,
+                "Tỷ lệ (%)": round(p_joint, 1),
             })
 
-    return pd.DataFrame(pair_rows).sort_values(by="Số ca đồng mắc", ascending=False).reset_index(drop=True)
+    return pd.DataFrame(pair_rows).sort_values(by="Số ca cùng gặp", ascending=False).reset_index(drop=True)
 
 
 @st.cache_data(show_spinner=False)
@@ -463,11 +463,11 @@ def compute_comorbidity_distribution(label_df: pd.DataFrame) -> list[tuple[str, 
     n_total = len(label_df)
 
     categories = [
-        ("1 bệnh lý", int((num_diseases == 1).sum()), "#0D9488"),
-        ("2 bệnh lý", int((num_diseases == 2).sum()), "#1E3A8A"),
-        ("3 bệnh lý", int((num_diseases == 3).sum()), "#2563EB"),
-        ("≥ 4 bệnh lý", int((num_diseases >= 4).sum()), "#D97706"),
-        ("0 bệnh (bình thường)", int((num_diseases == 0).sum()), "#64748B"),
+        ("1 bệnh", int((num_diseases == 1).sum()), "#0D9488"),
+        ("2 bệnh", int((num_diseases == 2).sum()), "#1E3A8A"),
+        ("3 bệnh", int((num_diseases == 3).sum()), "#2563EB"),
+        ("4 bệnh trở lên", int((num_diseases >= 4).sum()), "#D97706"),
+        ("Không có bệnh", int((num_diseases == 0).sum()), "#64748B"),
     ]
 
     result = []

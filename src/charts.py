@@ -155,33 +155,30 @@ def view_distribution_chart(master: pd.DataFrame) -> go.Figure | None:
 
 
 def pathology_prevalence_chart(stats_df: pd.DataFrame) -> go.Figure | None:
-    """Build clean horizontal bar chart of 14 abnormality groups across 4 organ systems."""
-    if stats_df.empty or "Tên gọn" not in stats_df.columns:
+    """Build clean horizontal bar chart of disease prevalence across 4 organ systems."""
+    name_col = "Tên" if "Tên" in stats_df.columns else ("Tên" if "Tên" in stats_df.columns else "Nhóm bệnh")
+    if stats_df.empty or name_col not in stats_df.columns:
         return None
 
     plot_df = stats_df.iloc[::-1].copy()
     cnt_series = plot_df["Số ca"] if "Số ca" in plot_df.columns else plot_df.get("Số lượng ca", pd.Series(dtype=int))
-    pct_series = (
-        plot_df["Tỷ lệ P(Bệnh) (%)"]
-        if "Tỷ lệ P(Bệnh) (%)" in plot_df.columns
-        else plot_df.get("Tỷ lệ (%)", pd.Series(dtype=float))
-    )
+    pct_series = plot_df["Tỷ lệ (%)"] if "Tỷ lệ (%)" in plot_df.columns else plot_df.get("Tỷ lệ P(Bệnh) (%)", pd.Series(dtype=float))
 
     plot_df["label"] = [
-        f"{c:,} ca ({p:.2f}%)" if isinstance(p, (int, float)) else f"{c:,} ca"
+        f"{c:,} ca ({p:.1f}%)" if isinstance(p, (int, float)) else f"{c:,} ca"
         for c, p in zip(cnt_series, pct_series)
     ]
 
     fig = px.bar(
         plot_df,
         x=cnt_series.name,
-        y="Tên gọn",
+        y=name_col,
         color="Hệ cơ quan",
         color_discrete_map=SYSTEM_COLORS,
         orientation="h",
         text="label",
-        title="14 nhóm bất thường thường gặp nhất",
-        labels={cnt_series.name: "Số ca", "Tên": ""},
+        title="Các bệnh thường gặp nhất",
+        labels={cnt_series.name: "Số ca", name_col: ""},
     )
     fig.update_traces(textposition="outside", cliponaxis=False)
     max_val = max(cnt_series) if not cnt_series.empty else 100
@@ -208,12 +205,12 @@ def cooccurrence_pairs_chart(pairs_df: pd.DataFrame, top_k: int = 8) -> go.Figur
         return None
 
     top_pairs = pairs_df.head(top_k).iloc[::-1].copy()
-    cnt_col = "Số ca đồng mắc" if "Số ca đồng mắc" in top_pairs.columns else "Số ca cùng gặp"
-    pct_col = "Xác suất đồng mắc (%)" if "Xác suất đồng mắc (%)" in top_pairs.columns else "Tỷ lệ gặp cả hai (%)"
-    pair_col = "Cặp bệnh lý đồng mắc" if "Cặp bệnh lý đồng mắc" in top_pairs.columns else "Cặp bệnh hay đi kèm"
+    cnt_col = "Số ca cùng gặp" if "Số ca cùng gặp" in top_pairs.columns else ("Số ca đồng mắc" if "Số ca đồng mắc" in top_pairs.columns else top_pairs.columns[1])
+    pct_col = "Tỷ lệ (%)" if "Tỷ lệ (%)" in top_pairs.columns else ("Xác suất đồng mắc (%)" if "Xác suất đồng mắc (%)" in top_pairs.columns else top_pairs.columns[2])
+    pair_col = "Cặp bệnh hay đi kèm" if "Cặp bệnh hay đi kèm" in top_pairs.columns else ("Cặp bệnh lý đồng mắc" if "Cặp bệnh lý đồng mắc" in top_pairs.columns else top_pairs.columns[0])
 
     top_pairs["label"] = [
-        f"{c:,} ca ({p:.2f}%)" if isinstance(p, (int, float)) else f"{c:,} ca"
+        f"{c:,} ca ({p:.1f}%)" if isinstance(p, (int, float)) else f"{c:,} ca"
         for c, p in zip(top_pairs[cnt_col], top_pairs[pct_col])
     ]
 
@@ -224,8 +221,8 @@ def cooccurrence_pairs_chart(pairs_df: pd.DataFrame, top_k: int = 8) -> go.Figur
         orientation="h",
         text="label",
         color_discrete_sequence=["#2563EB"],
-        title=f"Top {len(top_pairs)} cặp bệnh lý đồng mắc phổ biến nhất — P(A ∩ B)",
-        labels={cnt_col: "Số ca đồng mắc", pair_col: ""},
+        title="Các cặp bệnh hay đi kèm",
+        labels={cnt_col: "Số ca", pair_col: ""},
     )
     fig.update_traces(textposition="outside", cliponaxis=False)
     max_val = max(top_pairs[cnt_col]) if not top_pairs.empty else 100

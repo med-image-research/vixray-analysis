@@ -122,10 +122,10 @@ def render(filtered: FilteredBundle) -> None:
         avg_labels = (total_labels / total_images) if total_images > 0 else 0.0
 
         pk1, pk2, pk3, pk4 = st.columns(4)
-        pk1.metric("Ca có bệnh", f"{positive_cases:,} ({positive_rate:.1f}%)")
-        pk2.metric("Ca bình thường", f"{normal_cases:,} ({100 - positive_rate:.1f}%)")
-        pk3.metric("Tổng số bệnh ghi nhận", f"{total_labels:,}")
-        pk4.metric("Trung bình mỗi ca", f"{avg_labels:.1f} bệnh")
+        pk1.metric("Ca có bất thường", f"{positive_cases:,} ({positive_rate:.2f}%)")
+        pk2.metric("Ca bình thường (0 bệnh)", f"{normal_cases:,} ({100 - positive_rate:.2f}%)")
+        pk3.metric("Tổng lượt nhãn bất thường", f"{total_labels:,}")
+        pk4.metric("Trung bình mỗi ca", f"{avg_labels:.2f} nhóm")
 
         p_row1_col1, p_row1_col2 = st.columns([1.25, 1.0])
         with p_row1_col1:
@@ -149,8 +149,13 @@ def render(filtered: FilteredBundle) -> None:
             if fig_trend:
                 st.plotly_chart(fig_trend, use_container_width=True)
 
-        with st.expander("Xem bảng chi tiết các bệnh lý"):
+        with st.expander("Xem bảng chi tiết 14 nhóm bất thường"):
             display_stats = stats_df.drop(columns=["Tên gọn"], errors="ignore")
+            st.caption(
+                f"Dòng đối chứng: **0 bệnh lý dương tính (Tim phổi bình thường)**: "
+                f"**{normal_cases}** ca ({100 - positive_rate:.2f}%) • "
+                f"Phủ kín 100% toàn bộ {total_images:,} ca chụp (0 ca bị bỏ sót)."
+            )
             st.dataframe(display_stats, use_container_width=True, hide_index=True)
 
     st.markdown("---")

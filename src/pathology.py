@@ -24,26 +24,27 @@ SYSTEM_COLORS: dict[str, str] = {
 
 SHORT_LABEL_MAP: dict[str, str] = {
     "Tổn thương và dày tổ chức kẽ phổi": "Tổn thương mô kẽ",
-    "Khối choán chỗ và hạch hoặc bất thường trung thất": "U, hạch, trung thất",
-    "Bóng tim to và suy tim": "Tim to, suy tim",
-    "Vôi hóa và xơ vữa động mạch chủ": "Vôi hóa động mạch chủ",
+    "Bóng tim to và giãn buồng tim": "Tim to, suy tim",
+    "Vôi hóa động mạch chủ": "Vôi hóa động mạch chủ",
     "Quai động mạch chủ vồng hoặc giãn": "Quai ĐMC vồng, giãn",
-    "Viêm phổi và đông đặc hoặc đám mờ phổi": "Viêm, đông đặc phổi",
-    "Tràn dịch và dày dính màng phổi hoặc tù góc sườn hoành": "Tràn dịch, tù góc sườn hoành",
-    "Bất thường xương sườn và cột sống hoặc vật liệu y tế": "Bất thường xương, cột sống",
-    "Nốt phổi và nốt vôi hóa": "Nốt mờ, vôi hóa",
+    "Đám mờ và đông đặc phổi": "Đám mờ, đông đặc phổi",
     "Xơ hóa và dải xơ hoặc xẹp phổi": "Xơ hóa, xẹp phổi",
-    "Viêm và dày thành hoặc giãn phế quản": "Viêm, giãn phế quản",
-    "Khí phế thũng và giãn phế nang": "Khí phế thũng",
+    "Bất thường xương sườn và cột sống": "Bất thường xương, cột sống",
+    "Nốt phổi và nốt vôi hóa": "Nốt phổi, vôi hóa",
+    "Tù góc sườn hoành": "Tù góc sườn hoành",
+    "Tràn dịch màng phổi": "Tràn dịch màng phổi",
+    "Dày dính màng phổi và tràn khí màng phổi": "Dày dính, tràn khí MP",
     "Bất thường vòm hoành": "Bất thường vòm hoành",
+    "Vật liệu can thiệp và thiết bị y tế": "Vật liệu can thiệp y tế",
+    "Khối choán chỗ và bất thường trung thất": "U, hạch, trung thất",
 }
 
 TOP5_AGE_TREND_DISEASES: list[tuple[str, str, str, str]] = [
     ("Tổn thương và dày tổ chức kẽ phổi", "Tổn thương mô kẽ", "#1E3A8A", "circle"),
-    ("Bóng tim to và suy tim", "Tim to, suy tim", "#E11D48", "square"),
-    ("Vôi hóa và xơ vữa động mạch chủ", "Vôi hóa động mạch chủ", "#D97706", "triangle-up"),
+    ("Bóng tim to và giãn buồng tim", "Tim to, suy tim", "#E11D48", "square"),
+    ("Vôi hóa động mạch chủ", "Vôi hóa động mạch chủ", "#D97706", "triangle-up"),
     ("Quai động mạch chủ vồng hoặc giãn", "Quai ĐMC vồng, giãn", "#0D9488", "diamond"),
-    ("Viêm phổi và đông đặc hoặc đám mờ phổi", "Viêm, đông đặc phổi", "#7C3AED", "triangle-down"),
+    ("Đám mờ và đông đặc phổi", "Đám mờ, đông đặc phổi", "#7C3AED", "triangle-down"),
 ]
 
 HIERARCHICAL_TAXONOMY: list[tuple[str, str, list[str]]] = [
@@ -60,7 +61,7 @@ HIERARCHICAL_TAXONOMY: list[tuple[str, str, list[str]]] = [
     ),
     (
         "Tim và mạch máu lớn",
-        "Bóng tim to và suy tim",
+        "Bóng tim to và giãn buồng tim",
         [
             r"bóng\s*(?:mờ\s*)?tim\s*to",
             r"\btim\s*to\b",
@@ -79,7 +80,7 @@ HIERARCHICAL_TAXONOMY: list[tuple[str, str, list[str]]] = [
     ),
     (
         "Tim và mạch máu lớn",
-        "Vôi hóa và xơ vữa động mạch chủ",
+        "Vôi hóa động mạch chủ",
         [
             r"vôi\s*hóa.*(?:động\s*mạch\s*chủ|đmc|quai)",
             r"xơ\s*vữa.*(?:động\s*mạch\s*chủ|đmc|quai)",
@@ -96,7 +97,7 @@ HIERARCHICAL_TAXONOMY: list[tuple[str, str, list[str]]] = [
     ),
     (
         "Nhu mô phổi",
-        "Viêm phổi và đông đặc hoặc đám mờ phổi",
+        "Đám mờ và đông đặc phổi",
         [
             r"viêm\s*phổi",
             r"td\s*viêm",
@@ -105,6 +106,7 @@ HIERARCHICAL_TAXONOMY: list[tuple[str, str, list[str]]] = [
             r"áp\s*xe",
             r"abces",
             r"\bavh\b",
+            r"phế\s*quản",
             r"đông\s*đặc",
             r"đám\s*mờ",
             r"mờ\s*kính",
@@ -122,50 +124,6 @@ HIERARCHICAL_TAXONOMY: list[tuple[str, str, list[str]]] = [
         ],
     ),
     (
-        "Màng phổi và vòm hoành",
-        "Tràn dịch và dày dính màng phổi hoặc tù góc sườn hoành",
-        [
-            r"dịch\s*màng\s*phổi",
-            r"tràn\s*dịch",
-            r"mức\s*dịch",
-            r"dày\s*màng\s*phổi",
-            r"dính\s*màng\s*phổi",
-            r"dày\s*dính",
-            r"vôi\s*hóa\s*(?:dày\s*)?màng\s*phổi",
-            r"tù\s*(?:nhẹ\s*)?góc\s*sườn\s*hoành",
-            r"góc\s*sườn\s*hoành.*(?:tù|mờ|cao)",
-            r"mờ\s*(?:ngoại\s*vi\s*và\s*)?góc\s*sườn\s*hoành",
-            r"tràn\s*khí",
-            r"khí\s*màng\s*phổi",
-            r"khí\s*dưới\s*da",
-        ],
-    ),
-    (
-        "Xương và thành ngực",
-        "Bất thường xương sườn và cột sống hoặc vật liệu y tế",
-        [
-            r"cột\s*sống",
-            r"\bgãy\b",
-            r"xương\s*sườn",
-            r"xương\s*đòn",
-            r"xương\s*bả\s*vai",
-            r"xương\s*vai",
-            r"thoái\s*hóa",
-            r"đốt\s*sống",
-            r"khoang\s*liên\s*sườn\s*hẹp",
-            r"chỉ\s*thép",
-            r"nẹp",
-            r"vít",
-            r"van\s*tim",
-            r"máy\s*tạo\s*nhịp",
-            r"sonde",
-            r"ống\s*nội\s*khí\s*quản",
-            r"catheter",
-            r"kim\s*khí",
-            r"dẫn\s*lưu",
-        ],
-    ),
-    (
         "Nhu mô phổi",
         "Xơ hóa và dải xơ hoặc xẹp phổi",
         [
@@ -179,6 +137,28 @@ HIERARCHICAL_TAXONOMY: list[tuple[str, str, list[str]]] = [
             r"xẹp\s*(?:nhẹ\s*)?(?:thùy|thuỳ|phổi)",
             r"(?:đám|dải)\s*xẹp",
             r"co\s*kéo",
+            r"khí\s*phế\s*thũng",
+            r"khí\s*thũng",
+            r"copd",
+            r"ứ\s*khí",
+            r"giãn\s*phế\s*nang",
+            r"quá\s*sáng",
+            r"kém\s*sáng",
+        ],
+    ),
+    (
+        "Xương và thành ngực",
+        "Bất thường xương sườn và cột sống",
+        [
+            r"cột\s*sống",
+            r"\bgãy\b",
+            r"xương\s*sườn",
+            r"xương\s*đòn",
+            r"xương\s*bả\s*vai",
+            r"xương\s*vai",
+            r"thoái\s*hóa",
+            r"đốt\s*sống",
+            r"khoang\s*liên\s*sườn\s*hẹp",
         ],
     ),
     (
@@ -197,21 +177,34 @@ HIERARCHICAL_TAXONOMY: list[tuple[str, str, list[str]]] = [
         ],
     ),
     (
-        "Nhu mô phổi",
-        "Viêm và dày thành hoặc giãn phế quản",
-        [r"phế\s*quản"],
+        "Màng phổi và vòm hoành",
+        "Tù góc sườn hoành",
+        [
+            r"tù\s*(?:nhẹ\s*)?góc\s*sườn\s*hoành",
+            r"góc\s*sườn\s*hoành.*(?:tù|mờ|cao)",
+            r"mờ\s*(?:ngoại\s*vi\s*và\s*)?góc\s*sườn\s*hoành",
+        ],
     ),
     (
-        "Nhu mô phổi",
-        "Khí phế thũng và giãn phế nang",
+        "Màng phổi và vòm hoành",
+        "Tràn dịch màng phổi",
         [
-            r"khí\s*phế\s*thũng",
-            r"khí\s*thũng",
-            r"copd",
-            r"ứ\s*khí",
-            r"giãn\s*phế\s*nang",
-            r"quá\s*sáng",
-            r"kém\s*sáng",
+            r"dịch\s*màng\s*phổi",
+            r"tràn\s*dịch",
+            r"mức\s*dịch",
+        ],
+    ),
+    (
+        "Màng phổi và vòm hoành",
+        "Dày dính màng phổi và tràn khí màng phổi",
+        [
+            r"dày\s*màng\s*phổi",
+            r"dính\s*màng\s*phổi",
+            r"dày\s*dính",
+            r"vôi\s*hóa\s*(?:dày\s*)?màng\s*phổi",
+            r"tràn\s*khí",
+            r"khí\s*màng\s*phổi",
+            r"khí\s*dưới\s*da",
         ],
     ),
     (
@@ -226,8 +219,24 @@ HIERARCHICAL_TAXONOMY: list[tuple[str, str, list[str]]] = [
         ],
     ),
     (
+        "Xương và thành ngực",
+        "Vật liệu can thiệp và thiết bị y tế",
+        [
+            r"chỉ\s*thép",
+            r"nẹp",
+            r"vít",
+            r"van\s*tim",
+            r"máy\s*tạo\s*nhịp",
+            r"sonde",
+            r"ống\s*nội\s*khí\s*quản",
+            r"catheter",
+            r"kim\s*khí",
+            r"dẫn\s*lưu",
+        ],
+    ),
+    (
         "Nhu mô phổi",
-        "Khối choán chỗ và hạch hoặc bất thường trung thất",
+        "Khối choán chỗ và bất thường trung thất",
         [
             r"\bu\b",
             r"khối\s*mờ",
@@ -363,13 +372,13 @@ def compute_pathology_statistics(df: pd.DataFrame, label_df: pd.DataFrame) -> pd
 
         stats_rows.append({
             "Hệ cơ quan": disease_to_system.get(col, "Khác"),
-            "Nhóm bệnh": col,
+            "Nhóm bất thường": col,
             "Tên gọn": SHORT_LABEL_MAP.get(col, col),
             "Số ca": count,
-            "Tỷ lệ (%)": round(p_disease, 1),
-            "Tỷ trọng (%)": round(share_label, 1),
-            "Tỷ lệ ở Nam (%)": round(p_male, 1),
-            "Tỷ lệ ở Nữ (%)": round(p_female, 1),
+            "Tỷ lệ P(Bệnh) (%)": round(p_disease, 2),
+            "Tỷ trọng nhãn (%)": round(share_label, 2),
+            "P(Bệnh | Nam) (%)": round(p_male, 2),
+            "P(Bệnh | Nữ) (%)": round(p_female, 2),
             "Tuổi TB": round(mean_age, 1) if not np.isnan(mean_age) else 0.0,
         })
 
@@ -396,12 +405,12 @@ def compute_cooccurrence_pairs(
             lbl1 = SHORT_LABEL_MAP.get(c1, c1)
             lbl2 = SHORT_LABEL_MAP.get(c2, c2)
             pair_rows.append({
-                "Cặp bệnh hay đi kèm": f"{lbl1} + {lbl2}",
-                "Số ca cùng gặp": both,
-                "Tỷ lệ gặp cả hai (%)": round(p_joint, 1),
+                "Cặp bệnh lý đồng mắc": f"{lbl1} + {lbl2}",
+                "Số ca đồng mắc": both,
+                "Xác suất đồng mắc (%)": round(p_joint, 2),
             })
 
-    return pd.DataFrame(pair_rows).sort_values(by="Số ca cùng gặp", ascending=False).reset_index(drop=True)
+    return pd.DataFrame(pair_rows).sort_values(by="Số ca đồng mắc", ascending=False).reset_index(drop=True)
 
 
 @st.cache_data(show_spinner=False)
@@ -454,11 +463,11 @@ def compute_comorbidity_distribution(label_df: pd.DataFrame) -> list[tuple[str, 
     n_total = len(label_df)
 
     categories = [
-        ("1 bệnh", int((num_diseases == 1).sum()), "#0D9488"),
-        ("2 bệnh", int((num_diseases == 2).sum()), "#1E3A8A"),
-        ("3 bệnh", int((num_diseases == 3).sum()), "#2563EB"),
-        ("4 bệnh trở lên", int((num_diseases >= 4).sum()), "#D97706"),
-        ("Không có bệnh", int((num_diseases == 0).sum()), "#64748B"),
+        ("1 bệnh lý", int((num_diseases == 1).sum()), "#0D9488"),
+        ("2 bệnh lý", int((num_diseases == 2).sum()), "#1E3A8A"),
+        ("3 bệnh lý", int((num_diseases == 3).sum()), "#2563EB"),
+        ("≥ 4 bệnh lý", int((num_diseases >= 4).sum()), "#D97706"),
+        ("0 bệnh (bình thường)", int((num_diseases == 0).sum()), "#64748B"),
     ]
 
     result = []

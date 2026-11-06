@@ -155,31 +155,38 @@ def view_distribution_chart(master: pd.DataFrame) -> go.Figure | None:
 
 
 def pathology_prevalence_chart(stats_df: pd.DataFrame) -> go.Figure | None:
-    """Build clean horizontal bar chart of 13 disease groups across 4 organ systems."""
+    """Build clean horizontal bar chart of 14 abnormality groups across 4 organ systems."""
     if stats_df.empty or "Tên gọn" not in stats_df.columns:
         return None
 
     plot_df = stats_df.iloc[::-1].copy()
+    cnt_series = plot_df["Số ca"] if "Số ca" in plot_df.columns else plot_df.get("Số lượng ca", pd.Series(dtype=int))
+    pct_series = (
+        plot_df["Tỷ lệ P(Bệnh) (%)"]
+        if "Tỷ lệ P(Bệnh) (%)" in plot_df.columns
+        else plot_df.get("Tỷ lệ (%)", pd.Series(dtype=float))
+    )
+
     plot_df["label"] = [
-        f"{c:,} ca ({p:.1f}%)"
-        for c, p in zip(plot_df["Số ca"], plot_df["Tỷ lệ (%)"])
+        f"{c:,} ca ({p:.2f}%)" if isinstance(p, (int, float)) else f"{c:,} ca"
+        for c, p in zip(cnt_series, pct_series)
     ]
 
     fig = px.bar(
         plot_df,
-        x="Số ca",
+        x=cnt_series.name,
         y="Tên gọn",
         color="Hệ cơ quan",
         color_discrete_map=SYSTEM_COLORS,
         orientation="h",
         text="label",
-        title="13 nhóm bệnh thường gặp nhất",
-        labels={"Số ca": "Số ca", "Tên gọn": ""},
+        title="14 nhóm bất thường thường gặp nhất",
+        labels={cnt_series.name: "Số ca", "Tên": ""},
     )
     fig.update_traces(textposition="outside", cliponaxis=False)
-    max_val = max(plot_df["Số ca"]) if not plot_df.empty else 100
+    max_val = max(cnt_series) if not cnt_series.empty else 100
     fig.update_layout(
-        xaxis=dict(range=[0, max_val * 1.28], showgrid=True, gridcolor="#E2E8F0"),
+        xaxis=dict(range=[0, max_val * 1.30], showgrid=True, gridcolor="#E2E8F0"),
         yaxis=dict(showgrid=False),
         legend=dict(
             orientation="h",
@@ -190,7 +197,7 @@ def pathology_prevalence_chart(stats_df: pd.DataFrame) -> go.Figure | None:
             title=None,
         ),
         margin=dict(l=10, r=30, t=40, b=50),
-        height=480,
+        height=520,
     )
     return apply_chart_style(fig)
 
@@ -201,23 +208,27 @@ def cooccurrence_pairs_chart(pairs_df: pd.DataFrame, top_k: int = 8) -> go.Figur
         return None
 
     top_pairs = pairs_df.head(top_k).iloc[::-1].copy()
+    cnt_col = "Số ca đồng mắc" if "Số ca đồng mắc" in top_pairs.columns else "Số ca cùng gặp"
+    pct_col = "Xác suất đồng mắc (%)" if "Xác suất đồng mắc (%)" in top_pairs.columns else "Tỷ lệ gặp cả hai (%)"
+    pair_col = "Cặp bệnh lý đồng mắc" if "Cặp bệnh lý đồng mắc" in top_pairs.columns else "Cặp bệnh hay đi kèm"
+
     top_pairs["label"] = [
-        f"{c:,} ca ({p:.1f}%)"
-        for c, p in zip(top_pairs["Số ca cùng gặp"], top_pairs["Tỷ lệ gặp cả hai (%)"])
+        f"{c:,} ca ({p:.2f}%)" if isinstance(p, (int, float)) else f"{c:,} ca"
+        for c, p in zip(top_pairs[cnt_col], top_pairs[pct_col])
     ]
 
     fig = px.bar(
         top_pairs,
-        x="Số ca cùng gặp",
-        y="Cặp bệnh hay đi kèm",
+        x=cnt_col,
+        y=pair_col,
         orientation="h",
         text="label",
         color_discrete_sequence=["#2563EB"],
-        title=f"Top {len(top_pairs)} cặp bệnh hay gặp cùng nhau",
-        labels={"Số ca cùng gặp": "Số ca cùng gặp", "Cặp bệnh hay đi kèm": ""},
+        title=f"Top {len(top_pairs)} cặp bệnh lý đồng mắc phổ biến nhất — P(A ∩ B)",
+        labels={cnt_col: "Số ca đồng mắc", pair_col: ""},
     )
     fig.update_traces(textposition="outside", cliponaxis=False)
-    max_val = max(top_pairs["Số ca cùng gặp"]) if not top_pairs.empty else 100
+    max_val = max(top_pairs[cnt_col]) if not top_pairs.empty else 100
     fig.update_layout(
         xaxis=dict(range=[0, max_val * 1.25], showgrid=True, gridcolor="#E2E8F0"),
         yaxis=dict(showgrid=False),

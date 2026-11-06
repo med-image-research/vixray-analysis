@@ -338,7 +338,8 @@ def _render_annotation_form(
     case_row: pd.Series,
     is_editing: bool,
 ) -> None:
-    st.markdown("---")
+    if not is_editing:
+        st.markdown("---")
     current_rf_id = (
         st.session_state.editing_rf_id
         if is_editing

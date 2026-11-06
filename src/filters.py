@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pandas as pd
 from src.models import DatasetBundle, FilteredBundle, FilterSelection
 
 

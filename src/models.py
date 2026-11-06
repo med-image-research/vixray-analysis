@@ -18,9 +18,6 @@ class FilterSelection:
     views: tuple[str, ...] = ()
 
 
-FilterState = FilterSelection
-
-
 @dataclass(frozen=True)
 class FilteredBundle:
     master: pd.DataFrame

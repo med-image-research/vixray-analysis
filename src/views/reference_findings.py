@@ -41,7 +41,7 @@ def calculate_case_summary(master: pd.DataFrame, annotations: pd.DataFrame) -> p
         df["total_findings"] = 0
         df["annotated_findings"] = 0
         df["pending_findings"] = 0
-        df["case_status"] = "Không annotate"
+        df["case_status"] = "Không"
         return df
 
     annot = annotations.copy()
@@ -67,15 +67,13 @@ def calculate_case_summary(master: pd.DataFrame, annotations: pd.DataFrame) -> p
 
     conditions = [
         df["total_findings"] == 0,
-        df["pending_findings"] == 0,
-        df["annotated_findings"] > 0,
+        (df["total_findings"] > 0) & (df["pending_findings"] == 0),
     ]
     choices = [
-        "Không annotate",
-        "Đã annotate",
-        "Đang annotate",
+        "Không",
+        "Đã hoàn thành",
     ]
-    df["case_status"] = np.select(conditions, choices, default="Chưa annotate")
+    df["case_status"] = np.select(conditions, choices, default="Chưa hoàn thành")
     return df
 
 
@@ -169,7 +167,7 @@ def render(
     with col_f2:
         status = st.selectbox(
             "Lọc trạng thái gán nhãn",
-            ["Tất cả", "Đã annotate", "Đang annotate", "Chưa annotate", "Không annotate"],
+            ["Tất cả", "Đã hoàn thành", "Chưa hoàn thành", "Không"],
             index=0,
             key="case_tab_status_filter",
         )
@@ -193,11 +191,12 @@ def render(
 
     filtered_cases = filter_cases(case_summary, rf_count, status, split, keyword)
 
-    m1, m2, m3, m4 = st.columns(4)
+    m1, m2, m3, m4, m5 = st.columns(5)
     m1.metric("Số ảnh hiển thị", f"{len(filtered_cases):,}")
     m2.metric("Tổng số Reference Finding", f"{int(filtered_cases['total_findings'].sum()):,}")
-    m3.metric("Đã annotate", f"{len(filtered_cases[filtered_cases['case_status'] == 'Đã annotate']):,}")
-    m4.metric("Không annotate", f"{len(filtered_cases[filtered_cases['case_status'] == 'Không annotate']):,}")
+    m3.metric("Đã hoàn thành", f"{len(filtered_cases[filtered_cases['case_status'] == 'Đã hoàn thành']):,}")
+    m4.metric("Chưa hoàn thành", f"{len(filtered_cases[filtered_cases['case_status'] == 'Chưa hoàn thành']):,}")
+    m5.metric("Không", f"{len(filtered_cases[filtered_cases['case_status'] == 'Không']):,}")
 
     st.markdown("---")
     st.caption("Nhấp vào bất kỳ dòng nào trong bảng để mở ngay chi tiết và gán nhãn ca bệnh đó.")

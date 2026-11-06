@@ -56,7 +56,7 @@ def render(filtered: FilteredBundle) -> None:
 
     col1, col2, col3, col4, col5 = st.columns(5)
     col1.metric("Tổng số ảnh", f"{total_images:,}")
-    col2.metric("Ảnh đã có nhãn", f"{annotated_images_count:,}")
+    col2.metric("Ảnh cần annotate", f"{annotated_images_count:,}")
     col3.metric("Số Reference Finding", f"{total_findings:,}")
     col4.metric("Đã annotate", f"{annotated:,}")
     col5.metric("Chờ xử lý", f"{pending:,}")

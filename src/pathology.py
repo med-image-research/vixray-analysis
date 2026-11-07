@@ -137,6 +137,7 @@ HIERARCHICAL_TAXONOMY: list[tuple[str, str, list[str]]] = [
             r"xẹp\s*(?:nhẹ\s*)?(?:thùy|thuỳ|phổi)",
             r"(?:đám|dải)\s*xẹp",
             r"co\s*kéo",
+            r"giảm\s*thể\s*tích",
             r"khí\s*phế\s*thũng",
             r"khí\s*thũng",
             r"copd",
@@ -205,6 +206,8 @@ HIERARCHICAL_TAXONOMY: list[tuple[str, str, list[str]]] = [
             r"tràn\s*khí",
             r"khí\s*màng\s*phổi",
             r"khí\s*dưới\s*da",
+            r"mất\s*vân\s*phổi",
+            r"mức\s*dịch\s*khí",
         ],
     ),
     (
